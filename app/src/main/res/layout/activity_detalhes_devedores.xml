@@ -1,0 +1,92 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+
+        android:layout_marginTop="15dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/btnVoltar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:minWidth="48dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="16dp"
+            android:layout_marginStart="0dp"
+            android:text="‹"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textPagamentosEmAbertoDevedores"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CALOTEIROS"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Menu de opções -->
+    <LinearLayout
+        android:id="@+id/menuPagamentos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:id="@+id/tabNaoPagos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="NÃO PAGOS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
+        <TextView
+            android:id="@+id/tabPagos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="PAGOS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/darker_gray" />
+    </LinearLayout>
+
+    <!-- Lista de resultados -->
+    <ListView
+        android:id="@+id/listViewDetalhesPagamentos"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Total -->
+    <TextView
+        android:id="@+id/textTotalPagamentos"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Total: R$ 0.00"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="8dp" />
+</LinearLayout>

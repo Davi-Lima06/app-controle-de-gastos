@@ -1,7 +1,5 @@
 package com.example.controlecontas.activity;
 
-import static android.text.TextUtils.isEmpty;
-
 import static com.example.controlecontas.utils.Utils.adicionarMes;
 
 import android.annotation.SuppressLint;
@@ -12,9 +10,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
@@ -23,13 +21,22 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.controlecontas.R;
+import com.example.controlecontas.activity.cartao.ResumoCartaoActivity;
+import com.example.controlecontas.activity.categoria.DetalhesCategoriaActivity;
+import com.example.controlecontas.activity.categoria.ResumoActivity;
+import com.example.controlecontas.activity.devedores.DetalhesDevedoresActivity;
+import com.example.controlecontas.activity.devedores.DevedorActivity;
+import com.example.controlecontas.activity.pendents.PendentesActivity;
 import com.example.controlecontas.adapter.DespesaAdapter;
 import com.example.controlecontas.database.AppDatabase;
-import com.example.controlecontas.database.Despesa;
-import com.example.controlecontas.database.DespesaDao;
+import com.example.controlecontas.database.despesa.Despesa;
+import com.example.controlecontas.database.despesa.DespesaDao;
+import com.example.controlecontas.enums.TipoPagamentoEnum;
 import com.example.controlecontas.utils.Utils;
+import com.google.android.material.navigation.NavigationView;
 
 import java.text.NumberFormat;
 import java.time.LocalDate;
@@ -44,15 +51,23 @@ import es.dmoral.toasty.Toasty;
 
 public class MainActivity extends AppCompatActivity {
     private DespesaDao dao;
-    private Spinner spinnerCategoria;
+    private Spinner spinnerCategoria, spinnerCartao;
     private EditText editValor;
     private EditText editNomeItem;
-    private Button btnAdicionar, btnResumo, btnResumoCartao;
+    private Button btnAdicionar;
     private ListView listViewDespesas;
     private EditText editData;
-    private CheckBox checkBoxCartao;
     private EditText parcelas;
     private List<Despesa> listaDespesas;
+    private DrawerLayout drawerLayout;
+    private NavigationView navigationView;
+    private boolean isPagamentoParcelado;
+
+    private List<String> tiposPagamentosParcelados = List.of(
+            "FATURA",
+            "CRÉDITO");
+
+    private String formaPagamento;
 
     @SuppressLint("MissingInflatedId")
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -67,62 +82,23 @@ public class MainActivity extends AppCompatActivity {
         spinnerCategoria = findViewById(R.id.spinnerCategoria);
         editValor = findViewById(R.id.editValor);
         btnAdicionar = findViewById(R.id.btnAdicionar);
-        btnResumo = findViewById(R.id.btnResumo);
+        //btnResumo = findViewById(R.id.btnResumo);
         editNomeItem = findViewById(R.id.editNomeItem);
         listViewDespesas = findViewById(R.id.listViewDespesas);
         editData = findViewById(R.id.editData);
-        checkBoxCartao = findViewById(R.id.checkCartao);
         parcelas = findViewById(R.id.parcelas);
-        btnResumoCartao = findViewById(R.id.btnResumoCartao);
+        spinnerCartao = findViewById(R.id.spinnerCartao);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
 
+        ativarNavBar();
 
-        editData.setOnClickListener(v -> {
-            final Calendar calendario = Calendar.getInstance();
-            int ano = calendario.get(Calendar.YEAR);
-            int mes = calendario.get(Calendar.MONTH);
-            int dia = calendario.get(Calendar.DAY_OF_MONTH);
-
-            DatePickerDialog datePicker = new DatePickerDialog(
-                    this,
-                    (view, year, month, dayOfMonth) -> {
-                        String dataFormatada = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
-                        editData.setText(dataFormatada);
-                    },
-                    ano, mes, dia
-            );
-            datePicker.show();
-        });
-
-        ArrayList<String> categorias = new ArrayList<>(Arrays.asList(
-                "▼ Selecione uma Categoria",
-                "🏠 Despesas Fixas",
-                "🍽️ Comida",
-                "🐶 Pets",
-                "🛒 Utilitátios",
-                "🏖️ Lazer",
-                "🏥 Imprevistos"
-        ));
-
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, categorias);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerCategoria.setAdapter(spinnerAdapter);
+        editarData();
+        tipoPagamento();
+        categoriaProduto();
 
         this.atualizarListaDespesas();
         btnAdicionar.setOnClickListener(v -> adicionarDespesa());
-
-        btnResumo.setOnClickListener(v -> {
-            // Passa lista de strings para a activity de resumo
-            Intent intent = new Intent(MainActivity.this, ResumoActivity.class);
-            //intent.putStringArrayListExtra("listaDespesas", montarListaDespesasString());
-            startActivity(intent);
-        });
-        btnResumoCartao.setOnClickListener(v -> {
-            // Passa lista de strings para a activity de resumo
-            Intent intent = new Intent(MainActivity.this, ResumoCartaoActivity.class);
-            //intent.putStringArrayListExtra("listaDespesas", montarListaDespesasString());
-            startActivity(intent);
-        });
 
         editValor.addTextChangedListener(new TextWatcher() {
             private String current = "";
@@ -156,14 +132,113 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
 
-        // Listener para quando o usuário marcar/desmarcar
-        checkBoxCartao.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                parcelas.setVisibility(View.VISIBLE); // mostra
-            } else {
-                parcelas.setVisibility(View.GONE); // esconde
+    private void categoriaProduto() {
+        ArrayList<String> categorias = new ArrayList<>(Arrays.asList(
+                "▼ Selecione uma Categoria",
+                "🏠 Despesas Fixas",
+                "🍽️ Comida",
+                "🐶 Pets",
+                "🛒 Utilitários",
+                "🏖️ Lazer",
+                "🏥 Saúde",
+                "💸 Empréstimos",
+                "🚗 Carro",
+                "🏠 Apartamento",
+                "⛽ Combustível",
+                "📚 Educação",
+                "🛒 Mercado",
+                "🎁 Presente"
+        ));
+
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, categorias);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCategoria.setAdapter(spinnerAdapter);
+    }
+
+    private void tipoPagamento() {
+        ArrayList<String> pagamentos = new ArrayList<>(Arrays.asList(
+                "CRÉDITO",
+                "DÉBITO",
+                "PIX",
+                "FATURA"
+        ));
+
+        // Adapter que liga a lista ao Spinner
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item, // layout padrão
+                pagamentos
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerCartao.setAdapter(adapter);
+
+        // Listener para capturar seleção
+        spinnerCartao.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String pagamento = parent.getItemAtPosition(position).toString();
+                formaPagamento = pagamento;
+                if (pagamento.equals("CRÉDITO")|| pagamento.equals("FATURA")) {
+                    parcelas.setVisibility(View.VISIBLE);
+                    isPagamentoParcelado = true;
+                } else {
+                    parcelas.setVisibility(View.GONE);
+                    isPagamentoParcelado = false;
+                }
             }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+    private void editarData() {
+        editData.setOnClickListener(v -> {
+            final Calendar calendario = Calendar.getInstance();
+            int ano = calendario.get(Calendar.YEAR);
+            int mes = calendario.get(Calendar.MONTH);
+            int dia = calendario.get(Calendar.DAY_OF_MONTH);
+
+            DatePickerDialog datePicker = new DatePickerDialog(
+                    this,
+                    (view, year, month, dayOfMonth) -> {
+                        String dataFormatada = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
+                        editData.setText(dataFormatada);
+                    },
+                    ano, mes, dia
+            );
+            datePicker.show();
+        });
+    }
+
+    private void ativarNavBar() {
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_resumo) {
+                // Era o btnResumo
+                Intent intent = new Intent(MainActivity.this, ResumoActivity.class);
+                startActivity(intent);
+            } else if (id == R.id.nav_resumo_cartao) {
+                // Era o btnResumoCartao
+                Intent intent = new Intent(MainActivity.this, ResumoCartaoActivity.class);
+                startActivity(intent);
+            } else if (id == R.id.nav_resumo_pendentes) {
+                Intent intent = new Intent(MainActivity.this, PendentesActivity.class);
+                startActivity(intent);
+            } else if (id == R.id.nav_cadastro_golpistas) {
+                Intent intent = new Intent(MainActivity.this, DevedorActivity.class);
+                startActivity(intent);
+            } else if (id == R.id.nav_resumo_devedores) {
+                Intent intent = new Intent(MainActivity.this, DetalhesDevedoresActivity.class);
+                startActivity(intent);
+            }
+
+            drawerLayout.closeDrawers(); // fecha o menu depois do clique
+            return true;
         });
     }
 
@@ -196,29 +271,16 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private ArrayList<String> montarListaDespesasString() {
-        ArrayList<String> despesasStr = new ArrayList<>();
-        for (Despesa d : listaDespesas) {
-            String valor = ": R$ " + String.format("%.2f", d.getValor());
-            if (isEmpty(d.getNome())) {
-                despesasStr.add(d.getEmoji() + " " + d.getCategoria() + valor);
-            } else {
-                despesasStr.add(d.getEmoji() + " " + d.getNome() + valor);
-            }
-        }
-        System.out.println("DESPESAS: " + despesasStr);
-        return despesasStr;
-    }
-
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void adicionarDespesa() {
         String nomeItem = editNomeItem.getText().toString().trim();
         String categoriaSelecionada = spinnerCategoria.getSelectedItem().toString();
         String valorTexto = editValor.getText().toString().trim();
         String dataDespesa = editData.getText().toString().trim();
-        boolean isPagamentoComCartao = checkBoxCartao.isChecked();
         String numeroParcelas = parcelas.getText().toString().trim();
         int totalParcelas = 1;
+        String isPago = formaPagamento.equals("FATURA") ? "N" : "S";
+
 
         if (categoriaSelecionada.equals("▼ Selecione uma Categoria")) {
             Toasty.warning(this, "Por favor, selecione uma categoria", Toast.LENGTH_SHORT).show();
@@ -235,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
             dataDespesa = LocalDate.now().format(formatter);
         }
 
-        if (isPagamentoComCartao) {
+        if (isPagamentoParcelado) {
             if (numeroParcelas.isEmpty()) {
                 Toasty.warning(this, "Digite a quantidade de parcelas", Toast.LENGTH_SHORT).show();
             } else {
@@ -260,11 +322,11 @@ public class MainActivity extends AppCompatActivity {
         if (totalParcelas > 1) {
             for (int i = 0; i < totalParcelas; i++) {
                 String dataAtualizada = adicionarMes(dataDespesa, i);
-                Despesa despesa = new Despesa(nomeItem, categoria, valor, dataAtualizada,emoji, isPagamentoComCartao, totalParcelas);
+                Despesa despesa = new Despesa(nomeItem, categoria, valor, dataAtualizada,emoji, TipoPagamentoEnum.getCodidoPorDescricao(formaPagamento), totalParcelas, isPago);
                 dao.inserirDespesa(despesa);
             }
         } else {
-            Despesa despesa = new Despesa(nomeItem, categoria, valor, dataDespesa,emoji, isPagamentoComCartao, totalParcelas);
+            Despesa despesa = new Despesa(nomeItem, categoria, valor, dataDespesa,emoji, TipoPagamentoEnum.getCodidoPorDescricao(formaPagamento), totalParcelas, isPago);
             dao.inserirDespesa(despesa);
         }
 

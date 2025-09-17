@@ -1,4 +1,4 @@
-package com.example.controlecontas.activity;
+package com.example.controlecontas.activity.categoria;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -8,6 +8,7 @@ import static com.example.controlecontas.utils.Utils.getNomeAno;
 import static com.example.controlecontas.utils.Utils.getNomeMes;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -15,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -30,8 +32,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.controlecontas.R;
 import com.example.controlecontas.database.AppDatabase;
-import com.example.controlecontas.database.Despesa;
-import com.example.controlecontas.database.DespesaDao;
+import com.example.controlecontas.database.despesa.Despesa;
+import com.example.controlecontas.database.despesa.DespesaDao;
 import com.example.controlecontas.hashmap.DespesasPorCategoria;
 import com.example.controlecontas.hashmap.GraficoDespesas;
 import com.github.mikephil.charting.charts.PieChart;
@@ -41,13 +43,11 @@ import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import es.dmoral.toasty.Toasty;
@@ -71,6 +71,7 @@ public class ResumoActivity extends AppCompatActivity {
     private TextView btnVoltar;
     private LinearLayout layoutFiltro;
     private LinearLayout layoutCheckFiltro;
+    private boolean ehFiltro = false;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -135,7 +136,13 @@ public class ResumoActivity extends AppCompatActivity {
             dataFinal.setText(dataFim);
             detalhesFiltroPorData(dataInicio, dataFim);
             atualizarTituloResumo();
+            ehFiltro = false;
+            fecharFiltro();
         });
+    }
+
+    private void fecharFiltro() {
+        filtroResumo.setChecked(false);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -147,6 +154,8 @@ public class ResumoActivity extends AppCompatActivity {
             dataFinal.setText(dataFim);
             detalhesFiltroPorData(dataInicio, dataFim);
             atualizarTituloResumo();
+            ehFiltro = false;
+            fecharFiltro();
         });
     }
 
@@ -161,8 +170,13 @@ public class ResumoActivity extends AppCompatActivity {
 
     private void acaoAparecerFiltro() {
         filtroResumo.setOnCheckedChangeListener(((buttonView, isChecked) -> {
-            layoutCheckFiltro.setVisibility(View.GONE);
-            layoutFiltro.setVisibility(View.VISIBLE);
+            if (isChecked) {
+                layoutCheckFiltro.setVisibility(View.GONE);
+                layoutFiltro.setVisibility(View.VISIBLE);
+            } else {
+                layoutCheckFiltro.setVisibility(View.VISIBLE);
+                layoutFiltro.setVisibility(View.GONE);
+            }
         }));
     }
 
@@ -188,6 +202,7 @@ public class ResumoActivity extends AppCompatActivity {
             }
 
             detalhesFiltroPorData(dataInicio, dataFim);
+            ehFiltro = true;
         });
     }
 
@@ -244,6 +259,11 @@ public class ResumoActivity extends AppCompatActivity {
                 (view, year, month, dayOfMonth) -> {
                     String dataFormatada = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth);
                     editText.setText(dataFormatada);
+
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    if (imm != null) {
+                        imm.hideSoftInputFromWindow(editDataInicio.getWindowToken(), 0);
+                    }
                 },
                 ano, mes, dia
         );
@@ -323,14 +343,14 @@ public class ResumoActivity extends AppCompatActivity {
         textTotalGeral.setText("💰 Total: R$ " + String.format("%.2f", totalGeral));
     }
 
-    private void exibirListaDespesaPorCategoria() {
+    public void exibirListaDespesaPorCategoria() {
         listViewResumo.setOnItemClickListener((parent, view, position, id) -> {
             String itemClicado = (String) parent.getItemAtPosition(position);
             String semEmoji = itemClicado.substring(2); // Remove o primeiro caractere (emoji)
             String categoria = semEmoji.split(":")[0].trim(); // Pega tudo até o primeiro ":" e remove espaços
 
-            String dataInicio = editDataInicio.getText().toString();
-            String dataFim = editDataFim.getText().toString();
+            String dataInicio = ehFiltro ? editDataInicio.getText().toString() : dataAtual.getText().toString();
+            String dataFim = ehFiltro ? editDataFim.getText().toString() : dataFinal.getText().toString();
 
             Intent intent = new Intent(ResumoActivity.this, DetalhesCategoriaActivity.class);
             intent.putExtra("categoria", categoria);

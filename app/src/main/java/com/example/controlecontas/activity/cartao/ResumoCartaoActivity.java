@@ -1,14 +1,11 @@
-package com.example.controlecontas.activity;
+package com.example.controlecontas.activity.cartao;
 
 import static com.example.controlecontas.utils.Utils.adicionarMes;
 import static com.example.controlecontas.utils.Utils.diminuirMes;
 import static com.example.controlecontas.utils.Utils.getNomeAno;
 import static com.example.controlecontas.utils.Utils.getNomeMes;
 
-import android.app.DatePickerDialog;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -24,19 +21,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.controlecontas.R;
 import com.example.controlecontas.database.AppDatabase;
-import com.example.controlecontas.database.Despesa;
-import com.example.controlecontas.database.DespesaDao;
+import com.example.controlecontas.database.despesa.Despesa;
+import com.example.controlecontas.database.despesa.DespesaDao;
 import com.example.controlecontas.hashmap.DespesasPorCategoria;
 import com.example.controlecontas.hashmap.GraficoDespesas;
-import com.github.mikephil.charting.components.Legend;
-import com.github.mikephil.charting.data.PieData;
-import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.formatter.PercentFormatter;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +38,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
     private ListView listViewResumoCartao;
 
     private TextView textTotalGeral;
+    private TextView textResumoTotalCartao;
     private DespesaDao dao;
     private EditText dataAtual;
     private EditText dataFinal;
@@ -79,6 +72,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
         dataAnterior = findViewById(R.id.anterior);
         dataAtual = findViewById(R.id.dataAtualCartao);
         dataFinal = findViewById(R.id.dataFinalCartao);
+        textResumoTotalCartao = findViewById(R.id.textResumoTotalCartao);
         setarDataInicialFinalDoMes();
         acaoBotaoVoltar();
 
@@ -86,13 +80,12 @@ public class ResumoCartaoActivity extends AppCompatActivity {
 
         acaoProximoMes();
         acaoMesAnterior();
-
+        exibirTotalCartao();
         exibirListaDespesaPorCategoria();
         DespesasPorCategoria result = mapearDespesasPorCategoria(listaDespesas);
-        exibirTotalGeral(listaDespesas);
+        exibirTotalMes(listaDespesas);
         GraficoDespesas despesasPorCategoria = mapearListaEGraficoDeDespesas(result);
         plotarGraficoDespesasPorCategoria(despesasPorCategoria);
-
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -104,6 +97,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
             dataFinal.setText(dataFim);
             atualizarTituloResumo();
             detalhesFiltroPorData(dataInicio, dataFim);
+            exibirTotalCartao();
         });
     }
 
@@ -179,12 +173,19 @@ public class ResumoCartaoActivity extends AppCompatActivity {
         return new DespesasPorCategoria(totaisPorCategoria, categoriasEmoji);
     }
 
-    private void exibirTotalGeral(List<Despesa> listaDespesas) {
+    private void exibirTotalMes(List<Despesa> listaDespesas) {
         double totalGeral = 0.0;
         for (Despesa despesa : listaDespesas) {
             totalGeral += despesa.getValor();
         }
         textTotalGeral.setText("💰 Total fatura: R$ " + String.format("%.2f", totalGeral));
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private void exibirTotalCartao() {
+        double totalGeral = dao.getFaturaCompletaCartao(dataAtual.getText().toString());
+
+        textResumoTotalCartao.setText("💰 Saldo utilizado: R$ " + String.format("%.2f", totalGeral));
     }
 
     private void exibirListaDespesaPorCategoria() {
@@ -207,6 +208,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
     private void plotarGraficoDespesasPorCategoria(GraficoDespesas despesasPorCategoria) {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.item_categoria_resumo, R.id.textCategoriaValor, despesasPorCategoria.resumoLista);
         listViewResumoCartao.setAdapter(adapter);
+        listaDespesas.forEach(d -> System.out.println("DESPESA: " + d.toString()));
     }
 
     private void detalhesFiltroPorData(String dataInicio, String dataFim) {
@@ -215,7 +217,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
         listaDespesas.forEach(d -> System.out.println("DESPESA: " + d.toString()));
         exibirListaDespesaPorCategoria();
         DespesasPorCategoria result = mapearDespesasPorCategoria(listaDespesas);
-        exibirTotalGeral(listaDespesas);
+        exibirTotalMes(listaDespesas);
         GraficoDespesas despesasPorCategoria = mapearListaEGraficoDeDespesas(result);
         plotarGraficoDespesasPorCategoria(despesasPorCategoria);
     }

@@ -1,10 +1,11 @@
-package com.example.controlecontas.database;
+package com.example.controlecontas.database.despesa;
 
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
+
 import java.util.List;
 
 @Dao
@@ -34,8 +35,14 @@ public interface DespesaDao {
     @Query("SELECT * FROM despesas WHERE id = :id")
     Despesa obterPorId(int id);
 
-    @Query("SELECT * FROM despesas WHERE isCartao = 1 AND date(dataDespesa) BETWEEN date(:dataInicio) AND date(:dataFim)")
+    @Query("SELECT * FROM despesas WHERE tipoPagamento = '1' AND date(dataDespesa) BETWEEN date(:dataInicio) AND date(:dataFim)")
     List<Despesa> obterDespesasPorDataECartao(String dataInicio, String dataFim);
-    @Query("SELECT * FROM despesas WHERE isCartao = 1 AND categoria = :categoriaAtual AND date(dataDespesa) BETWEEN date(:dataInicio) AND date(:dataFim) ORDER BY date(dataDespesa) DESC")
+    @Query("SELECT * FROM despesas WHERE tipoPagamento = '1' AND categoria = :categoriaAtual AND date(dataDespesa) BETWEEN date(:dataInicio) AND date(:dataFim) ORDER BY date(dataDespesa) DESC")
     List<Despesa> obterDespesasPorCategoriaEDataCartao(String categoriaAtual, String dataInicio, String dataFim);
+
+    @Query("SELECT SUM(valor) FROM despesas WHERE tipoPagamento = '1' AND date(dataDespesa) > date(:dataInicio)")
+    double getFaturaCompletaCartao(String dataInicio);
+
+    @Query("SELECT * FROM despesas WHERE isPago = 'N' AND date(dataDespesa) BETWEEN date(:dataInicio) AND date(:dataFim) ORDER BY date(dataDespesa) DESC")
+    List<Despesa> obterDespesasPendentesDoMes(String dataInicio, String dataFim);
 }

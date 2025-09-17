@@ -13,12 +13,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.controlecontas.R;
-
 import androidx.annotation.NonNull;
 
-import com.example.controlecontas.activity.categoria.DetalhesCategoriaActivity;
+import com.example.controlecontas.R;
 import com.example.controlecontas.activity.MainActivity;
+import com.example.controlecontas.activity.pendents.PendentesActivity;
 import com.example.controlecontas.database.AppDatabase;
 import com.example.controlecontas.database.despesa.Despesa;
 import com.example.controlecontas.database.despesa.DespesaDao;
@@ -30,14 +29,14 @@ import java.util.Locale;
 
 import es.dmoral.toasty.Toasty;
 
-public class DespesaAdapter extends ArrayAdapter<Despesa> {
+public class NaoPagosAdapter extends ArrayAdapter<Despesa> {
 
     private DespesaDao dao;
     private Context context;
     private List<Despesa> despesas;
     private Runnable atualizarCallback;
 
-    public DespesaAdapter(Context context, List<Despesa> despesas, Runnable atualizarCallback) {
+    public NaoPagosAdapter(Context context, List<Despesa> despesas, Runnable atualizarCallback) {
         super(context, 0, despesas);
         this.context = context;
         this.despesas = despesas;
@@ -52,12 +51,12 @@ public class DespesaAdapter extends ArrayAdapter<Despesa> {
         Despesa despesa = getItem(position);
 
         if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.item_despesa, parent, false);
+            convertView = LayoutInflater.from(context).inflate(R.layout.item_nao_pago, parent, false);
         }
 
-        TextView txtDespesa = convertView.findViewById(R.id.txtDespesa);
-        TextView txtData = convertView.findViewById(R.id.txtData);
-        ImageView btnDelete = convertView.findViewById(R.id.btnDelete);
+        TextView txtDespesa = convertView.findViewById(R.id.txtDespesaNaoPago);
+        TextView txtData = convertView.findViewById(R.id.txtDataNaoPago);
+        ImageView btnPagar = convertView.findViewById(R.id.btnPagar);
 
         String nome = TextUtils.isEmpty(despesa.getNome()) ? despesa.getCategoria() : despesa.getNome();
 
@@ -67,21 +66,22 @@ public class DespesaAdapter extends ArrayAdapter<Despesa> {
         txtDespesa.setText(despesa.getEmoji() + " " + nome + ": " + valorFormatado);
         txtData.setText("📆 " + Utils.formatarDataParaExibicao(despesa.getDataDespesa()));
 
-        btnDelete.setOnClickListener(v -> {
+        btnPagar.setOnClickListener(v -> {
             new AlertDialog.Builder(context)
-                    .setTitle("Excluir despesa")
-                    .setMessage("Deseja realmente excluir esta despesa?")
+                    .setTitle("Pagar despesa")
+                    .setMessage("Deseja realmente marcar esta despesa como paga?")
                     .setPositiveButton("Sim", (dialog, which) -> {
                         Despesa despesaBanco = dao.obterPorId(despesa.getId());
-                        dao.deletarDespesa(despesaBanco);
-                        System.out.println("DELETOU");
+                        despesaBanco.setIsPago("S");
+                        dao.atualizarDespesa(despesaBanco);
                         atualizarCallback.run(); //Atualiza a lista LOCAL, acredito que seja na main ou detalhes, ainda nao descobri
                         if (context instanceof MainActivity) {
                             ((MainActivity) context).atualizarListaDespesas();
-                        } else if (context instanceof DetalhesCategoriaActivity) {
-                            ((DetalhesCategoriaActivity) context).setResult(RESULT_OK);
+                        } else if (context instanceof PendentesActivity) {
+                            ((PendentesActivity) context).setResult(RESULT_OK);
                         }
-                        Toasty.success(context, "Despesa excluída", Toast.LENGTH_SHORT).show();
+
+                        Toasty.success(context, "Despesa Paga", Toast.LENGTH_SHORT).show();
                     })
                     .setNegativeButton("Cancelar", null)
                     .show();

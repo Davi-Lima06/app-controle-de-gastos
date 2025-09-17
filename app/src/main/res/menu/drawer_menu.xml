@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_cadastro_golpistas"
+        android:title="😑 Cadastrar novo Golpista" />
+    <item
+        android:id="@+id/nav_resumo"
+        android:title="📊 Resumo por Categoria" />
+    <item
+        android:id="@+id/nav_resumo_cartao"
+        android:title="💳 Resumo do Cartão" />
+    <item
+        android:id="@+id/nav_resumo_devedores"
+        android:title="👀 Golpistas" />
+    <item
+        android:id="@+id/nav_resumo_pendentes"
+        android:title="🥲 Faturas do mês" />
+</menu>

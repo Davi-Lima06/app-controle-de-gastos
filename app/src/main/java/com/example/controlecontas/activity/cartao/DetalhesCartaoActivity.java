@@ -1,4 +1,4 @@
-package com.example.controlecontas.activity;
+package com.example.controlecontas.activity.cartao;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -6,19 +6,19 @@ import android.view.MenuItem;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.controlecontas.R;
 import com.example.controlecontas.adapter.DespesaAdapter;
 import com.example.controlecontas.database.AppDatabase;
-import com.example.controlecontas.R;
-import com.example.controlecontas.database.Despesa;
-import com.example.controlecontas.database.DespesaDao;
+import com.example.controlecontas.database.despesa.Despesa;
+import com.example.controlecontas.database.despesa.DespesaDao;
 import com.example.controlecontas.utils.Utils;
-
 
 import java.util.List;
 
-public class DetalhesCategoriaActivity extends AppCompatActivity {
+public class DetalhesCartaoActivity extends AppCompatActivity {
 
     private TextView textCategoria;
     private ListView listViewDetalhes;
@@ -28,7 +28,6 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
     private String dataInicio;
     private String dataFim;
     private TextView btnVoltar;
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -44,11 +43,12 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_detalhes_categoria);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_detalhes_cartao);
         AppDatabase db = AppDatabase.getDatabase(this);
         dao = db.despesaDao();
         textCategoria = findViewById(R.id.textCategoria);
-        listViewDetalhes = findViewById(R.id.listViewDetalhes);
+        listViewDetalhes = findViewById(R.id.listViewDetalhesCartao);
         textTotal = findViewById(R.id.textTotal);
         btnVoltar = findViewById(R.id.btnVoltar);
 
@@ -61,14 +61,8 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
         dataInicio = intent.getStringExtra("data_inicio");
         dataFim = intent.getStringExtra("data_fim");
 
-        String[] partes = dataFim.split("-");
-
-        int ano = Integer.parseInt(partes[0]);
-        int mes = Integer.parseInt(partes[1]);
-
         atualizarTituloResumo(dataInicio, dataFim, categoriaAtual);
         carregarDespesas();
-
     }
 
     private void atualizarTituloResumo(String dataInicio, String dataFim, String categoria) {
@@ -76,7 +70,7 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
         String dataInicioFormatada = Utils.formatarDataParaExibicao(dataInicio);
         String dataFimFormatada = Utils.formatarDataParaExibicao(dataFim);
 
-        String tituloResumo = String.format("Gastos com %s de %s a %s", categoria, dataInicioFormatada, dataFimFormatada);
+        String tituloResumo = String.format("Gastos no cartão com %s de %s a %s", categoria, dataInicioFormatada, dataFimFormatada);
 
         textCategoria.setText(tituloResumo);
     }
@@ -90,7 +84,7 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
     }
 
     private void carregarDespesas() {
-        List<Despesa> despesas = dao.obterDespesasPorCategoriaEData(categoriaAtual, dataInicio, dataFim);
+        List<Despesa> despesas = dao.obterDespesasPorCategoriaEDataCartao(categoriaAtual, dataInicio, dataFim);
 
         DespesaAdapter adapter = new DespesaAdapter(
                 this,

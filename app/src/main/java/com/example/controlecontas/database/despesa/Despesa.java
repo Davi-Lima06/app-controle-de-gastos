@@ -1,4 +1,4 @@
-package com.example.controlecontas.database;
+package com.example.controlecontas.database.despesa;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -12,17 +12,19 @@ public class Despesa {
     private String categoria;
     private Double valor;
     private String dataDespesa;
-    private boolean isCartao;
+    private String tipoPagamento;
     private int parcelas;
+    private String isPago;
 
-    public Despesa(String nomeItem, String categoria, double valor, String dataDespesa, String emoji, boolean isCartao, int parcelas) {
+    public Despesa(String nomeItem, String categoria, double valor, String dataDespesa, String emoji, String tipoPagamento, int parcelas, String isPago) {
         this.nome = nomeItem;
         this.categoria = categoria;
         this.valor = valor;
         this.dataDespesa = dataDespesa;
-        this.isCartao = isCartao;
+        this.tipoPagamento = tipoPagamento;
         this.emoji = emoji;
         this.parcelas = parcelas;
+        this.isPago = isPago;
     }
 
     public Despesa() {
@@ -80,12 +82,12 @@ public class Despesa {
     }
 
 
-    public boolean isCartao() {
-        return isCartao;
+    public String getTipoPagamento() {
+        return tipoPagamento;
     }
 
-    public void setCartao(boolean cartao) {
-        isCartao = cartao;
+    public void setTipoPagamento(String cartao) {
+        tipoPagamento = cartao;
     }
 
     public int getParcelas() {
@@ -104,9 +106,17 @@ public class Despesa {
                 ", categoria='" + categoria + '\'' +
                 ", valor=" + valor +
                 ", dataDespesa='" + dataDespesa + '\'' +
-                ", isCartao=" + isCartao +
+                ", isCartao=" + tipoPagamento +
                 ", parcelas=" + parcelas +
                 ", emoji='" + emoji + '\'' +
                 '}';
+    }
+
+    public String isPago() {
+        return isPago;
+    }
+
+    public void setIsPago(String pago) {
+        isPago = pago;
     }
 }
