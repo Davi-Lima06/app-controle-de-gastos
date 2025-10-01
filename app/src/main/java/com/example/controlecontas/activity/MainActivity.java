@@ -138,18 +138,19 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<String> categorias = new ArrayList<>(Arrays.asList(
                 "▼ Selecione uma Categoria",
                 "🏠 Despesas Fixas",
-                "🍽️ Comida",
-                "🐶 Pets",
-                "🛒 Utilitários",
-                "🏖️ Lazer",
-                "🏥 Saúde",
-                "💸 Empréstimos",
+                "🏢 Apartamento",
                 "🚗 Carro",
-                "🏠 Apartamento",
                 "⛽ Combustível",
+                "🍽️ Comida",
                 "📚 Educação",
+                "💸 Empréstimos",
+                "🏖️ Lazer",
                 "🛒 Mercado",
-                "🎁 Presente"
+                "🐶 Pets",
+                "🎁 Presente",
+                "🏥 Saúde",
+                "🛍️ Utilitários",
+                "\uD83D\uDE8C Transporte"
         ));
 
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
@@ -163,7 +164,8 @@ public class MainActivity extends AppCompatActivity {
                 "CRÉDITO",
                 "DÉBITO",
                 "PIX",
-                "FATURA"
+                "FATURA",
+                "TIKET / VALE"
         ));
 
         // Adapter que liga a lista ao Spinner
@@ -258,7 +260,7 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("categoria", categoriaSelecionada);
             intent.putExtra("data_inicio", dataInicioEDataFim[0]);
             intent.putExtra("data_fim", dataInicioEDataFim[1]);
-            startActivityForResult(intent, 1);
+            startActivity(intent);
         });
     }
 
@@ -336,6 +338,7 @@ public class MainActivity extends AppCompatActivity {
         editValor.setText("");
         spinnerCategoria.setSelection(0);
         editData.setText("");
+        parcelas.setText("1");
 
         Toasty.success(this, "Despesa adicionada com sucesso!", Toast.LENGTH_SHORT).show();
     }

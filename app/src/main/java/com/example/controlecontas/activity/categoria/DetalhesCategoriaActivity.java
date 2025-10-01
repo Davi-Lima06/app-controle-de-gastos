@@ -68,7 +68,6 @@ public class DetalhesCategoriaActivity extends AppCompatActivity {
 
         atualizarTituloResumo(dataInicio, dataFim, categoriaAtual);
         carregarDespesas();
-
     }
 
     private void atualizarTituloResumo(String dataInicio, String dataFim, String categoria) {

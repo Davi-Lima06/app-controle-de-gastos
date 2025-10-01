@@ -110,6 +110,7 @@ public class ResumoCartaoActivity extends AppCompatActivity {
             dataFinal.setText(dataFim);
             atualizarTituloResumo();
             detalhesFiltroPorData(dataInicio, dataFim);
+            exibirTotalCartao();
         });
     }
 
